@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jam Realtime</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@700&family=Pacifico&family=Playfair+Display:wght@700&family=Poppins:wght@600&family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#eef2f7;--panel:#ffffff;--fg:#0f172a;--muted:#5b6678;--accent:#4338ca;--glow:none;
+--font:'Poppins',system-ui,sans-serif;--fw:600;--scale:1;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme]){--bg:#0b0f14;--panel:#131a22;--fg:#e6edf5;--muted:#8895a7;--accent:#7dd3fc;color-scheme:dark}}
+[data-theme=siang]{--bg:#eef2f7;--panel:#ffffff;--fg:#0f172a;--muted:#5b6678;--accent:#4338ca;color-scheme:light}
+[data-theme=malam]{--bg:#0b0f14;--panel:#131a22;--fg:#e6edf5;--muted:#8895a7;--accent:#7dd3fc;color-scheme:dark}
+[data-theme=neon]{--bg:#09000f;--panel:#14001f;--fg:#f5d0fe;--muted:#a78bfa;--accent:#22d3ee;--glow:0 0 .35em rgba(34,211,238,.6),0 0 1em rgba(217,70,239,.45);color-scheme:dark}
+[data-theme=senja]{--page:linear-gradient(165deg,#1e1b4b 0%,#7c2d62 55%,#f97316 130%);--bg:#7c2d62;--panel:#2a1030;--fg:#fff1e6;--muted:#fcd7bd;--accent:#fde047;color-scheme:dark}
+[data-theme=hutan]{--bg:#0d1b14;--panel:#14281d;--fg:#dcfce7;--muted:#86a595;--accent:#86efac;color-scheme:dark}
+[data-theme=samudra]{--page:linear-gradient(180deg,#03141f 0%,#0a3a52 100%);--bg:#06202e;--panel:#052233;--fg:#e0f7ff;--muted:#8fc1d4;--accent:#2dd4bf;color-scheme:dark}
+[data-theme=terminal]{--bg:#0a0700;--panel:#130d00;--fg:#ffb000;--muted:#a66f00;--accent:#ffb000;--glow:0 0 .3em rgba(255,176,0,.55);color-scheme:dark}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;display:flex;flex-direction:column;background:var(--page,var(--bg));background-attachment:fixed;color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+main{flex:1;display:grid;place-items:center;padding:2rem 1rem}
+.clock{text-align:center;max-width:100%}
+.time{font-family:var(--font);font-weight:var(--fw);font-size:calc(clamp(2.2rem,12.5vw,8.5rem)*var(--scale));line-height:1.05;letter-spacing:.02em;white-space:nowrap;font-variant-numeric:tabular-nums;text-shadow:var(--glow)}
+.time .sep{color:var(--accent);padding:0 .04em;animation:blink 1s steps(1) infinite}
+.time small{font-size:.28em;margin-left:.4em;color:var(--accent);letter-spacing:0}
+@keyframes blink{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.time .sep{animation:none}}
+.date{margin-top:.7rem;font-size:clamp(1rem,3.4vw,1.4rem)}
+.zone{margin-top:.25rem;font-size:.9rem;color:var(--muted)}
+.panel{border-top:1px solid color-mix(in srgb,var(--fg) 18%,transparent);background:color-mix(in srgb,var(--panel) 80%,transparent);padding:1.1rem 1rem 1.4rem}
+.panel-in{max-width:46rem;margin:0 auto;display:grid;gap:1.1rem}
+.group h2{margin:0 0 .5rem;font-size:.9rem;font-weight:600;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:.5rem}
+.chip{font:inherit;font-size:.95rem;color:var(--fg);background:transparent;border:1px solid color-mix(in srgb,var(--fg) 25%,transparent);border-radius:999px;padding:.45rem .85rem;cursor:pointer;display:inline-flex;align-items:center;gap:.5rem}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed=true]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.chip:focus-visible,.opt input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dot{width:1rem;height:1rem;border-radius:50%;border:1px solid color-mix(in srgb,var(--fg) 30%,transparent)}
+.opts{gap:1.25rem}
+.opt{display:inline-flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.95rem}
+.opt input{accent-color:var(--accent);width:1.1rem;height:1.1rem;margin:0}
+</style>
+</head>
+<body>
+<main>
+  <section class="clock">
+    <div id="time" class="time" role="timer"></div>
+    <div id="date" class="date"></div>
+    <div id="zone" class="zone"></div>
+  </section>
+</main>
+<section class="panel">
+  <div class="panel-in">
+    <div class="group"><h2>Tema</h2><div id="themes" class="row"></div></div>
+    <div class="group"><h2>Font</h2><div id="fonts" class="row"></div></div>
+    <div class="row opts">
+      <label class="opt"><input type="checkbox" id="h24"> Format 24 jam</label>
+      <label class="opt"><input type="checkbox" id="sec"> Tampilkan detik</label>
+    </div>
+  </div>
+</section>
+<script>
+const $ = id => document.getElementById(id);
+const THEMES = [
+  ['siang','Siang','#eef2f7','#4338ca'],
+  ['malam','Malam','#0b0f14','#7dd3fc'],
+  ['neon','Neon','#09000f','#22d3ee'],
+  ['senja','Senja','#7c2d62','#fde047'],
+  ['hutan','Hutan','#0d1b14','#86efac'],
+  ['samudra','Samudra','#0a3a52','#2dd4bf'],
+  ['terminal','Terminal','#0a0700','#ffb000']
+];
+const FONTS = [
+  {n:'Poppins',l:'Poppins',f:'sans-serif',w:600,s:1},
+  {n:'Orbitron',l:'Orbitron',f:'sans-serif',w:700,s:.88},
+  {n:'Share Tech Mono',l:'Share Tech',f:'monospace',w:400,s:1.05},
+  {n:'Playfair Display',l:'Playfair',f:'serif',w:700,s:1},
+  {n:'Bebas Neue',l:'Bebas Neue',f:'Impact,sans-serif',w:400,s:1.25},
+  {n:'Pacifico',l:'Pacifico',f:'cursive',w:400,s:1},
+  {n:'Press Start 2P',l:'Pixel',f:'monospace',w:400,s:.55,cs:'.7rem'}
+];
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+const defTheme = dark ? 'malam' : 'siang';
+let S = {theme:defTheme, font:'Poppins', h24:true, sec:true};
+try {
+  const r = JSON.parse(localStorage.getItem('jam-prefs') || 'null');
+  if (r && typeof r === 'object') S = Object.assign(S, r);
+} catch (e) {}
+if (!THEMES.some(t => t[0] === S.theme)) S.theme = defTheme;
+if (!FONTS.some(f => f.n === S.font)) S.font = 'Poppins';
+const save = () => { try { localStorage.setItem('jam-prefs', JSON.stringify(S)); } catch (e) {} };
+
+THEMES.forEach(([k, label, bg, ac]) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'chip'; b.dataset.k = k;
+  b.innerHTML = '<span class="dot" style="background:linear-gradient(135deg,' + bg + ' 50%,' + ac + ' 50%)"></span>' + label;
+  b.onclick = () => { S.theme = k; save(); apply(); };
+  $('themes').appendChild(b);
+});
+FONTS.forEach(f => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'chip'; b.dataset.k = f.n;
+  b.textContent = f.l;
+  b.style.fontFamily = "'" + f.n + "'," + f.f;
+  if (f.cs) b.style.fontSize = f.cs;
+  b.onclick = () => { S.font = f.n; save(); apply(); };
+  $('fonts').appendChild(b);
+});
+$('h24').onchange = e => { S.h24 = e.target.checked; save(); tick(); };
+$('sec').onchange = e => { S.sec = e.target.checked; save(); tick(); };
+
+function tick() {
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  let h = d.getHours(), ap = '';
+  if (!S.h24) { ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; }
+  const sep = '<span class="sep">:</span>';
+  $('time').innerHTML = p(h) + sep + p(d.getMinutes()) + (S.sec ? sep + p(d.getSeconds()) : '') + (ap ? '<small>' + ap + '</small>' : '');
+  $('date').textContent = d.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  $('zone').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+function apply() {
+  const root = document.documentElement, f = FONTS.find(x => x.n === S.font);
+  root.dataset.theme = S.theme;
+  root.style.setProperty('--font', "'" + f.n + "'," + f.f);
+  root.style.setProperty('--fw', f.w);
+  root.style.setProperty('--scale', f.s);
+  document.querySelectorAll('#themes .chip').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === S.theme));
+  document.querySelectorAll('#fonts .chip').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === S.font));
+  $('h24').checked = S.h24; $('sec').checked = S.sec;
+  tick();
+}
+apply();
+(function loop() { tick(); setTimeout(loop, 1000 - (Date.now() % 1000) + 5); })();
+</script>
+</body>
+</html>
